@@ -1,0 +1,2529 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>究極の3Dサイコロ</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+
+    background:
+        radial-gradient(circle at 50% 0%, #3d3d3d 0%, #202020 45%, #080808 100%);
+
+    color: white;
+
+    font-family:
+        Arial,
+        "Noto Sans JP",
+        sans-serif;
+
+    text-align: center;
+
+    overflow-x: hidden;
+
+    transition:
+        background 0.5s;
+}
+
+/* =========================
+   背景
+========================= */
+
+body.blue {
+    background:
+        radial-gradient(circle at 50% 0%, #174c70, #07131d 65%, #020507);
+}
+
+body.red {
+    background:
+        radial-gradient(circle at 50% 0%, #702525, #1c0707 65%, #050000);
+}
+
+body.purple {
+    background:
+        radial-gradient(circle at 50% 0%, #54257c, #17091f 65%, #050006);
+}
+
+body.green {
+    background:
+        radial-gradient(circle at 50% 0%, #24613e, #07190e 65%, #020703);
+}
+
+h1 {
+    margin: 25px 0 8px;
+    font-size: clamp(28px, 6vw, 44px);
+    text-shadow: 0 4px 12px black;
+}
+
+.subtitle {
+    color: #bbb;
+    margin-bottom: 18px;
+}
+
+/* =========================
+   設定
+========================= */
+
+.settings {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.setting-box {
+    background: rgba(255,255,255,0.08);
+    padding: 9px 13px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+}
+
+select {
+    font-size: 17px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: none;
+    margin-left: 5px;
+}
+
+/* =========================
+   ボタン
+========================= */
+
+button {
+    font-size: 21px;
+    font-weight: bold;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 13px;
+    cursor: pointer;
+    background: white;
+    color: #222;
+
+    box-shadow:
+        0 6px 18px rgba(0,0,0,0.45);
+
+    transition:
+        transform 0.15s,
+        box-shadow 0.15s;
+}
+
+button:hover {
+    transform: scale(1.05);
+
+    box-shadow:
+        0 8px 24px rgba(255,255,255,0.15);
+}
+
+button:active {
+    transform: scale(0.94);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* =========================
+   合計
+========================= */
+
+#total {
+    min-height: 45px;
+    margin: 15px 0;
+    font-size: 29px;
+    font-weight: bold;
+
+    text-shadow:
+        0 3px 8px black;
+}
+
+/* =========================
+   特殊演出
+========================= */
+
+#special {
+    min-height: 45px;
+    font-size: 30px;
+    font-weight: bold;
+    opacity: 0;
+}
+
+.special-show {
+    animation:
+        specialPop 0.8s ease-out;
+}
+
+@keyframes specialPop {
+
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+
+    45% {
+        opacity: 1;
+        transform: scale(1.3);
+    }
+
+    70% {
+        transform: scale(0.9);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* =========================
+   ゾロ目スペシャル
+========================= */
+
+.jackpot {
+    animation:
+        jackpotFlash 0.9s ease-out;
+}
+
+@keyframes jackpotFlash {
+
+    0% {
+        filter: brightness(1);
+    }
+
+    20% {
+        filter: brightness(2.5);
+    }
+
+    40% {
+        filter: brightness(0.8);
+    }
+
+    60% {
+        filter: brightness(2);
+    }
+
+    100% {
+        filter: brightness(1);
+    }
+}
+
+/* =========================
+   サイコロエリア
+========================= */
+
+.dice-container {
+    width: 100%;
+    max-width: 1050px;
+    margin: 0 auto;
+
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    gap: 20px;
+
+    padding: 15px 15px 40px;
+}
+
+.dice-box {
+    width: 150px;
+    height: 205px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* =========================
+   3D空間
+========================= */
+
+.scene {
+    width: 140px;
+    height: 170px;
+    perspective: 750px;
+    position: relative;
+}
+
+/* =========================
+   動かす外側
+========================= */
+
+.dice-wrapper {
+    width: 140px;
+    height: 140px;
+    position: relative;
+    transform-style: preserve-3d;
+    will-change: transform;
+}
+
+/* =========================
+   サイコロ
+========================= */
+
+.dice {
+    width: 140px;
+    height: 140px;
+
+    position: absolute;
+
+    transform-style: preserve-3d;
+
+    transform: translateZ(0);
+
+    will-change: transform;
+
+    backface-visibility: visible;
+}
+
+/* =========================
+   面
+========================= */
+
+.face {
+    position: absolute;
+
+    width: 140px;
+    height: 140px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff 0%,
+            #f4f4f4 45%,
+            #d6d6d6 100%
+        );
+
+    border: 2px solid #aaa;
+
+    border-radius: 18px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    grid-template-rows:
+        repeat(3, 1fr);
+
+    padding: 18px;
+
+    backface-visibility: hidden;
+
+    transform-style: preserve-3d;
+
+    box-shadow:
+        inset 0 0 14px rgba(0,0,0,0.12),
+        0 3px 8px rgba(0,0,0,0.3);
+}
+
+/* =========================
+   目
+========================= */
+
+.pip {
+    width: 22px;
+    height: 22px;
+
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            #444,
+            #111 55%,
+            #000
+        );
+
+    border-radius: 50%;
+
+    align-self: center;
+    justify-self: center;
+
+    box-shadow:
+        inset 2px 2px 3px rgba(255,255,255,0.2),
+        1px 2px 4px rgba(0,0,0,0.45);
+}
+
+/* =========================
+   3D面
+========================= */
+
+.front {
+    transform:
+        translateZ(70px);
+}
+
+.back {
+    transform:
+        rotateY(180deg)
+        translateZ(70px);
+}
+
+.right {
+    transform:
+        rotateY(90deg)
+        translateZ(70px);
+}
+
+.left {
+    transform:
+        rotateY(-90deg)
+        translateZ(70px);
+}
+
+.top {
+    transform:
+        rotateX(90deg)
+        translateZ(70px);
+}
+
+.bottom {
+    transform:
+        rotateX(-90deg)
+        translateZ(70px);
+}
+
+/* =========================
+   結果
+========================= */
+
+.result {
+    margin-top: 5px;
+    height: 30px;
+    font-size: 23px;
+    font-weight: bold;
+
+    text-shadow:
+        0 2px 5px black;
+}
+
+/* =========================
+   サイコロのジャンプ
+========================= */
+
+@keyframes bounceDice {
+
+    0% {
+        transform:
+            translate3d(0,0,0)
+            rotateZ(0deg);
+    }
+
+    10% {
+        transform:
+            translate3d(-18px,-28px,0)
+            rotateZ(-9deg);
+    }
+
+    20% {
+        transform:
+            translate3d(25px,-52px,0)
+            rotateZ(11deg);
+    }
+
+    30% {
+        transform:
+            translate3d(-28px,-18px,0)
+            rotateZ(-13deg);
+    }
+
+    40% {
+        transform:
+            translate3d(32px,-60px,0)
+            rotateZ(15deg);
+    }
+
+    50% {
+        transform:
+            translate3d(-22px,-34px,0)
+            rotateZ(-11deg);
+    }
+
+    60% {
+        transform:
+            translate3d(18px,-23px,0)
+            rotateZ(8deg);
+    }
+
+    70% {
+        transform:
+            translate3d(-12px,-14px,0)
+            rotateZ(-5deg);
+    }
+
+    82% {
+        transform:
+            translate3d(7px,-7px,0)
+            rotateZ(3deg);
+    }
+
+    92% {
+        transform:
+            translate3d(-3px,-3px,0)
+            rotateZ(-1deg);
+    }
+
+    100% {
+        transform:
+            translate3d(0,0,0)
+            rotateZ(0deg);
+    }
+}
+
+/* =========================
+   着地バウンド
+========================= */
+
+@keyframes landingBounce {
+
+    0% {
+        transform:
+            translateY(0)
+            scale(1);
+    }
+
+    20% {
+        transform:
+            translateY(6px)
+            scale(1.06,0.94);
+    }
+
+    45% {
+        transform:
+            translateY(-7px)
+            scale(0.98,1.02);
+    }
+
+    70% {
+        transform:
+            translateY(3px)
+            scale(1.02,0.98);
+    }
+
+    100% {
+        transform:
+            translateY(0)
+            scale(1);
+    }
+}
+
+/* =========================
+   影
+========================= */
+
+.shadow {
+    position: absolute;
+
+    width: 105px;
+    height: 25px;
+
+    left: 17px;
+    top: 137px;
+
+    background:
+        rgba(0,0,0,0.58);
+
+    border-radius: 50%;
+
+    filter: blur(7px);
+
+    opacity: 0.65;
+
+    pointer-events: none;
+
+    will-change: transform, opacity;
+}
+
+@keyframes shadowBounce {
+
+    0% {
+        transform: scale(1);
+        opacity: 0.65;
+    }
+
+    20% {
+        transform: scale(0.5);
+        opacity: 0.28;
+    }
+
+    40% {
+        transform: scale(0.38);
+        opacity: 0.18;
+    }
+
+    60% {
+        transform: scale(0.58);
+        opacity: 0.35;
+    }
+
+    75% {
+        transform: scale(0.88);
+        opacity: 0.52;
+    }
+
+    90% {
+        transform: scale(1.1);
+        opacity: 0.72;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0.65;
+    }
+}
+
+/* =========================
+   回転
+========================= */
+
+.rolling {
+    animation:
+        diceSpin 1.9s cubic-bezier(.15,.75,.2,1)
+        forwards;
+}
+
+@keyframes diceSpin {
+
+    from {
+        transform:
+            rotateX(var(--startX))
+            rotateY(var(--startY))
+            rotateZ(var(--startZ));
+    }
+
+    to {
+        transform:
+            rotateX(var(--endX))
+            rotateY(var(--endY))
+            rotateZ(var(--endZ));
+    }
+}
+
+.rolling-wrapper {
+    animation:
+        bounceDice 1.9s cubic-bezier(.2,.8,.3,1)
+        forwards;
+}
+
+.landing {
+    animation:
+        landingBounce 0.32s ease-out;
+}
+
+.shadow-rolling {
+    animation:
+        shadowBounce 1.9s ease-in-out forwards;
+}
+
+/* =========================
+   画面揺れ
+========================= */
+
+.shake {
+    animation:
+        screenShake 0.18s ease-out;
+}
+
+@keyframes screenShake {
+
+    0% {
+        transform: translate(0,0);
+    }
+
+    20% {
+        transform: translate(-4px,1px);
+    }
+
+    40% {
+        transform: translate(4px,-1px);
+    }
+
+    60% {
+        transform: translate(-3px,0);
+    }
+
+    80% {
+        transform: translate(3px,1px);
+    }
+
+    100% {
+        transform: translate(0,0);
+    }
+}
+
+/* =========================
+   下の情報
+========================= */
+
+.panel {
+    width: min(900px, 92%);
+
+    margin: 10px auto 35px;
+
+    padding: 18px;
+
+    background:
+        rgba(255,255,255,0.07);
+
+    border-radius: 15px;
+
+    backdrop-filter: blur(6px);
+
+    box-shadow:
+        0 5px 20px rgba(0,0,0,0.3);
+}
+
+.panel h2 {
+    margin-top: 0;
+}
+
+.stats {
+    display: flex;
+
+    justify-content: center;
+
+    flex-wrap: wrap;
+
+    gap: 12px;
+}
+
+.stat {
+    min-width: 75px;
+
+    padding: 10px;
+
+    background:
+        rgba(0,0,0,0.3);
+
+    border-radius: 10px;
+}
+
+.stat-number {
+    font-size: 23px;
+    font-weight: bold;
+}
+
+.history {
+    display: flex;
+
+    justify-content: center;
+
+    flex-wrap: wrap;
+
+    gap: 7px;
+}
+
+.history-item {
+    background: rgba(255,255,255,0.12);
+
+    padding: 7px 11px;
+
+    border-radius: 8px;
+
+    font-weight: bold;
+}
+
+/* =========================
+   最高記録
+========================= */
+
+.record {
+    font-size: 20px;
+
+    margin-top: 15px;
+}
+
+/* =========================
+   スマホ
+========================= */
+
+@media (max-width: 600px) {
+
+    h1 {
+        margin-top: 18px;
+    }
+
+    .dice-container {
+        gap: 10px;
+    }
+
+    .dice-box {
+        width: 140px;
+    }
+
+    button {
+        font-size: 19px;
+    }
+
+    .panel {
+        width: 94%;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>🎲 究極の3Dサイコロ</h1>
+
+<div class="subtitle">
+    本格3Dダイスシミュレーター
+</div>
+
+<div class="settings">
+
+    <div class="setting-box">
+        🎲 個数
+
+        <select
+            id="diceCount"
+            onchange="createDice()">
+
+            <option value="1">1個</option>
+            <option value="2">2個</option>
+            <option value="3">3個</option>
+            <option value="4">4個</option>
+            <option value="5">5個</option>
+            <option value="6">6個</option>
+            <option value="7">7個</option>
+            <option value="8">8個</option>
+            <option value="9">9個</option>
+            <option value="10" selected>10個</option>
+
+        </select>
+    </div>
+
+
+    <div class="setting-box">
+        🌌 背景
+
+        <select
+            id="theme"
+            onchange="changeTheme()">
+
+            <option value="normal">通常</option>
+            <option value="blue">青</option>
+            <option value="red">赤</option>
+            <option value="purple">紫</option>
+            <option value="green">緑</option>
+
+        </select>
+    </div>
+
+</div>
+
+
+<button
+    id="rollButton"
+    onclick="rollAllDice()">
+
+    🎲 全部振る！
+
+</button>
+
+
+<div id="total"></div>
+
+<div id="special"></div>
+
+<div
+    id="diceContainer"
+    class="dice-container">
+</div>
+
+
+<!-- =========================
+     統計
+========================= -->
+
+<div class="panel">
+
+    <h2>📊 出目統計</h2>
+
+    <div class="stats">
+
+        <div class="stat">
+            <div>1</div>
+            <div
+                id="stat1"
+                class="stat-number">
+                0
+            </div>
+        </div>
+
+        <div class="stat">
+            <div>2</div>
+            <div
+                id="stat2"
+                class="stat-number">
+                0
+            </div>
+        </div>
+
+        <div class="stat">
+            <div>3</div>
+            <div
+                id="stat3"
+                class="stat-number">
+                0
+            </div>
+        </div>
+
+        <div class="stat">
+            <div>4</div>
+            <div
+                id="stat4"
+                class="stat-number">
+                0
+            </div>
+        </div>
+
+        <div class="stat">
+            <div>5</div>
+            <div
+                id="stat5"
+                class="stat-number">
+                0
+            </div>
+        </div>
+
+        <div class="stat">
+            <div>6</div>
+            <div
+                id="stat6"
+                class="stat-number">
+                0
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     履歴
+========================= -->
+
+<div class="panel">
+
+    <h2>📜 最近の結果</h2>
+
+    <div
+        id="history"
+        class="history">
+    </div>
+
+    <div
+        id="record"
+        class="record">
+
+        🏆 最高合計：0
+
+    </div>
+
+</div>
+
+
+<script>
+
+let audioContext = null;
+
+let soundTimer = null;
+
+
+let stats = {
+
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 0
+
+};
+
+
+let historyData = [];
+
+let bestTotal = 0;
+
+
+/* =========================
+   オーディオ開始
+========================= */
+
+function startAudio() {
+
+    if (!audioContext) {
+
+        audioContext =
+            new (
+                window.AudioContext ||
+                window.webkitAudioContext
+            )();
+
+    }
+
+    if (
+        audioContext.state ===
+        "suspended"
+    ) {
+
+        audioContext.resume();
+
+    }
+
+}
+
+
+/* =========================
+   サイコロ衝突音
+========================= */
+
+function diceImpact(
+    volume = 0.08
+) {
+
+    if (!audioContext) return;
+
+
+    const duration = 0.055;
+
+
+    const bufferSize =
+        audioContext.sampleRate *
+        duration;
+
+
+    const buffer =
+        audioContext.createBuffer(
+            1,
+            bufferSize,
+            audioContext.sampleRate
+        );
+
+
+    const data =
+        buffer.getChannelData(0);
+
+
+    for (
+        let i = 0;
+        i < bufferSize;
+        i++
+    ) {
+
+        data[i] =
+            (Math.random() * 2 - 1) *
+            Math.pow(
+                1 - i / bufferSize,
+                3
+            );
+
+    }
+
+
+    const source =
+        audioContext.createBufferSource();
+
+    source.buffer = buffer;
+
+
+    const filter =
+        audioContext.createBiquadFilter();
+
+    filter.type = "bandpass";
+
+    filter.frequency.value =
+        1200 +
+        Math.random() * 1800;
+
+    filter.Q.value = 1.2;
+
+
+    const gain =
+        audioContext.createGain();
+
+
+    gain.gain.setValueAtTime(
+        volume,
+        audioContext.currentTime
+    );
+
+
+    gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        audioContext.currentTime +
+        duration
+    );
+
+
+    source.connect(filter);
+
+    filter.connect(gain);
+
+    gain.connect(
+        audioContext.destination
+    );
+
+
+    source.start();
+
+}
+
+
+/* =========================
+   転がり低音
+========================= */
+
+function diceRollThump(
+    volume = 0.05
+) {
+
+    if (!audioContext) return;
+
+
+    const osc =
+        audioContext.createOscillator();
+
+    const gain =
+        audioContext.createGain();
+
+
+    osc.type = "triangle";
+
+
+    osc.frequency.setValueAtTime(
+        180,
+        audioContext.currentTime
+    );
+
+
+    osc.frequency.exponentialRampToValueAtTime(
+        90,
+        audioContext.currentTime +
+        0.09
+    );
+
+
+    gain.gain.setValueAtTime(
+        volume,
+        audioContext.currentTime
+    );
+
+
+    gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        audioContext.currentTime +
+        0.09
+    );
+
+
+    osc.connect(gain);
+
+    gain.connect(
+        audioContext.destination
+    );
+
+
+    osc.start();
+
+
+    osc.stop(
+        audioContext.currentTime +
+        0.1
+    );
+
+}
+
+
+/* =========================
+   転がり音
+========================= */
+
+function rollingSound(count) {
+
+    clearInterval(soundTimer);
+
+
+    let elapsed = 0;
+
+
+    soundTimer =
+        setInterval(() => {
+
+            elapsed += 105;
+
+
+            const progress =
+                elapsed / 1900;
+
+
+            const volume =
+                0.11 *
+                (1 - progress);
+
+
+            const hits =
+                Math.max(
+                    1,
+                    Math.min(
+                        4,
+                        Math.ceil(
+                            count / 3
+                        )
+                    )
+                );
+
+
+            for (
+                let i = 0;
+                i < hits;
+                i++
+            ) {
+
+                if (
+                    Math.random() < 0.75
+                ) {
+
+                    diceImpact(
+                        volume
+                    );
+
+                }
+
+
+                if (
+                    Math.random() < 0.25
+                ) {
+
+                    diceRollThump(
+                        volume * 0.7
+                    );
+
+                }
+
+            }
+
+
+            if (
+                elapsed >= 1900
+            ) {
+
+                clearInterval(
+                    soundTimer
+                );
+
+            }
+
+        },105);
+
+}
+
+
+/* =========================
+   着地音
+========================= */
+
+function landingSound() {
+
+    if (!audioContext) return;
+
+
+    const now =
+        audioContext.currentTime;
+
+
+    const osc =
+        audioContext.createOscillator();
+
+    const gain =
+        audioContext.createGain();
+
+
+    osc.type = "triangle";
+
+
+    osc.frequency.setValueAtTime(
+        135,
+        now
+    );
+
+
+    osc.frequency.exponentialRampToValueAtTime(
+        58,
+        now + 0.14
+    );
+
+
+    gain.gain.setValueAtTime(
+        0.15,
+        now
+    );
+
+
+    gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        now + 0.14
+    );
+
+
+    osc.connect(gain);
+
+    gain.connect(
+        audioContext.destination
+    );
+
+
+    osc.start(now);
+
+
+    osc.stop(
+        now + 0.15
+    );
+
+
+    setTimeout(() => {
+
+        diceImpact(0.08);
+
+    },30);
+
+}
+
+
+/* =========================
+   ゾロ目・大当たりSE
+========================= */
+
+function jackpotSound(count) {
+
+    if (!audioContext) return;
+
+
+    const now =
+        audioContext.currentTime;
+
+
+    const power =
+        Math.min(
+            1.4,
+            0.8 + count * 0.08
+        );
+
+
+    /* =====================
+       ジャララララ…
+    ===================== */
+
+    const notes = [
+
+        330,
+        392,
+        440,
+        523,
+        659,
+        784,
+        988,
+        1175
+
+    ];
+
+
+    notes.forEach(
+        (freq,index) => {
+
+            const osc =
+                audioContext.createOscillator();
+
+            const gain =
+                audioContext.createGain();
+
+
+            osc.type = "sawtooth";
+
+
+            const start =
+                now +
+                index * 0.055;
+
+
+            osc.frequency.setValueAtTime(
+                freq,
+                start
+            );
+
+
+            osc.frequency.exponentialRampToValueAtTime(
+                freq * 1.12,
+                start + 0.06
+            );
+
+
+            gain.gain.setValueAtTime(
+                0,
+                start
+            );
+
+
+            gain.gain.linearRampToValueAtTime(
+                0.045 * power,
+                start + 0.008
+            );
+
+
+            gain.gain.exponentialRampToValueAtTime(
+                0.001,
+                start + 0.09
+            );
+
+
+            osc.connect(gain);
+
+            gain.connect(
+                audioContext.destination
+            );
+
+
+            osc.start(start);
+
+            osc.stop(
+                start + 0.1
+            );
+
+        }
+    );
+
+
+    /* =====================
+       ドォォォン！！
+    ===================== */
+
+    const bass =
+        audioContext.createOscillator();
+
+    const bassGain =
+        audioContext.createGain();
+
+
+    bass.type = "sine";
+
+
+    bass.frequency.setValueAtTime(
+        120,
+        now + 0.42
+    );
+
+
+    bass.frequency.exponentialRampToValueAtTime(
+        42,
+        now + 0.72
+    );
+
+
+    bassGain.gain.setValueAtTime(
+        0.22 * power,
+        now + 0.42
+    );
+
+
+    bassGain.gain.exponentialRampToValueAtTime(
+        0.001,
+        now + 0.75
+    );
+
+
+    bass.connect(bassGain);
+
+    bassGain.connect(
+        audioContext.destination
+    );
+
+
+    bass.start(
+        now + 0.42
+    );
+
+
+    bass.stop(
+        now + 0.78
+    );
+
+
+    /* =====================
+       キュイーーーン！！
+    ===================== */
+
+    const high =
+        audioContext.createOscillator();
+
+    const highGain =
+        audioContext.createGain();
+
+
+    high.type = "triangle";
+
+
+    high.frequency.setValueAtTime(
+        700,
+        now + 0.43
+    );
+
+
+    high.frequency.exponentialRampToValueAtTime(
+        1800,
+        now + 0.75
+    );
+
+
+    highGain.gain.setValueAtTime(
+        0.001,
+        now + 0.43
+    );
+
+
+    highGain.gain.linearRampToValueAtTime(
+        0.09 * power,
+        now + 0.5
+    );
+
+
+    highGain.gain.exponentialRampToValueAtTime(
+        0.001,
+        now + 0.9
+    );
+
+
+    high.connect(highGain);
+
+    highGain.connect(
+        audioContext.destination
+    );
+
+
+    high.start(
+        now + 0.43
+    );
+
+
+    high.stop(
+        now + 0.95
+    );
+
+
+    /* =====================
+       最後のジャキーン！
+    ===================== */
+
+    setTimeout(() => {
+
+        diceImpact(
+            0.18 * power
+        );
+
+    },720);
+
+}
+
+
+/* =========================
+   面を作る
+========================= */
+
+function createFace(
+    number,
+    className
+) {
+
+    const face =
+        document.createElement(
+            "div"
+        );
+
+
+    face.className =
+        "face " + className;
+
+
+    const positions = {
+
+        1: [5],
+
+        2: [1,9],
+
+        3: [1,5,9],
+
+        4: [1,3,7,9],
+
+        5: [1,3,5,7,9],
+
+        6: [1,3,4,6,7,9]
+
+    };
+
+
+    positions[number]
+        .forEach(pos => {
+
+            const pip =
+                document.createElement(
+                    "div"
+                );
+
+
+            pip.className =
+                "pip";
+
+
+            pip.style.gridArea =
+                `${Math.ceil(pos / 3)} / ${((pos - 1) % 3) + 1}`;
+
+
+            face.appendChild(
+                pip
+            );
+
+        });
+
+
+    return face;
+
+}
+
+
+/* =========================
+   サイコロ生成
+========================= */
+
+function createDice() {
+
+    const container =
+        document.getElementById(
+            "diceContainer"
+        );
+
+
+    const count =
+        Number(
+            document.getElementById(
+                "diceCount"
+            ).value
+        );
+
+
+    container.innerHTML = "";
+
+
+    document.getElementById(
+        "total"
+    ).textContent = "";
+
+
+    document.getElementById(
+        "special"
+    ).textContent = "";
+
+
+    for (
+        let i = 0;
+        i < count;
+        i++
+    ) {
+
+        const box =
+            document.createElement(
+                "div"
+            );
+
+
+        box.className =
+            "dice-box";
+
+
+        const scene =
+            document.createElement(
+                "div"
+            );
+
+
+        scene.className =
+            "scene";
+
+
+        const wrapper =
+            document.createElement(
+                "div"
+            );
+
+
+        wrapper.className =
+            "dice-wrapper";
+
+
+        const dice =
+            document.createElement(
+                "div"
+            );
+
+
+        dice.className =
+            "dice";
+
+
+        const shadow =
+            document.createElement(
+                "div"
+            );
+
+
+        shadow.className =
+            "shadow";
+
+
+        /* =====================
+           面の配置
+        ===================== */
+
+        dice.appendChild(
+            createFace(
+                1,
+                "front"
+            )
+        );
+
+
+        dice.appendChild(
+            createFace(
+                6,
+                "back"
+            )
+        );
+
+
+        dice.appendChild(
+            createFace(
+                3,
+                "right"
+            )
+        );
+
+
+        dice.appendChild(
+            createFace(
+                4,
+                "left"
+            )
+        );
+
+
+        dice.appendChild(
+            createFace(
+                5,
+                "top"
+            )
+        );
+
+
+        dice.appendChild(
+            createFace(
+                2,
+                "bottom"
+            )
+        );
+
+
+        wrapper.appendChild(
+            dice
+        );
+
+
+        scene.appendChild(
+            wrapper
+        );
+
+
+        scene.appendChild(
+            shadow
+        );
+
+
+        const result =
+            document.createElement(
+                "div"
+            );
+
+
+        result.className =
+            "result";
+
+
+        result.textContent =
+            "？";
+
+
+        box.appendChild(
+            scene
+        );
+
+
+        box.appendChild(
+            result
+        );
+
+
+        container.appendChild(
+            box
+        );
+
+    }
+
+}
+
+
+/* =========================
+   背景変更
+========================= */
+
+function changeTheme() {
+
+    const theme =
+        document.getElementById(
+            "theme"
+        ).value;
+
+
+    document.body.classList.remove(
+        "blue",
+        "red",
+        "purple",
+        "green"
+    );
+
+
+    if (
+        theme !== "normal"
+    ) {
+
+        document.body.classList.add(
+            theme
+        );
+
+    }
+
+}
+
+
+/* =========================
+   統計
+========================= */
+
+function updateStats() {
+
+    for (
+        let i = 1;
+        i <= 6;
+        i++
+    ) {
+
+        document.getElementById(
+            "stat" + i
+        ).textContent =
+            stats[i];
+
+    }
+
+}
+
+
+/* =========================
+   履歴
+========================= */
+
+function updateHistory() {
+
+    const history =
+        document.getElementById(
+            "history"
+        );
+
+
+    history.innerHTML = "";
+
+
+    historyData
+        .slice(0,10)
+        .forEach(item => {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.className =
+                "history-item";
+
+
+            div.textContent =
+                item;
+
+
+            history.appendChild(
+                div
+            );
+
+        });
+
+}
+
+
+/* =========================
+   最高記録
+========================= */
+
+function updateRecord() {
+
+    document.getElementById(
+        "record"
+    ).textContent =
+        "🏆 最高合計：" +
+        bestTotal;
+
+}
+
+
+/* =========================
+   特殊演出
+========================= */
+
+function specialEffect(
+    results
+) {
+
+    const special =
+        document.getElementById(
+            "special"
+        );
+
+
+    special.classList.remove(
+        "special-show"
+    );
+
+
+    special.textContent = "";
+
+
+    void special.offsetWidth;
+
+
+    /* =====================
+       全部同じ
+    ===================== */
+
+    if (
+        results.length >= 2 &&
+        results.every(
+            n => n === results[0]
+        )
+    ) {
+
+        special.textContent =
+            "🎉🎉 ゾロ目！！！ 🎉🎉";
+
+
+        special.classList.add(
+            "special-show"
+        );
+
+
+        document.body.classList.remove(
+            "jackpot"
+        );
+
+
+        void document.body.offsetWidth;
+
+
+        document.body.classList.add(
+            "jackpot"
+        );
+
+
+        return true;
+
+    }
+
+
+    /* =====================
+       全部6
+    ===================== */
+
+    if (
+        results.length >= 2 &&
+        results.every(
+            n => n === 6
+        )
+    ) {
+
+        special.textContent =
+            "🔥🔥 全部6！！！ 🔥🔥";
+
+
+        special.classList.add(
+            "special-show"
+        );
+
+
+        return false;
+
+    }
+
+
+    /* =====================
+       1個だけ
+    ===================== */
+
+    if (
+        results.length === 1
+    ) {
+
+        return false;
+
+    }
+
+
+    /* =====================
+       6大量発生
+    ===================== */
+
+    const sixCount =
+        results.filter(
+            n => n === 6
+        ).length;
+
+
+    if (
+        sixCount >=
+        Math.ceil(
+            results.length * 0.7
+        )
+    ) {
+
+        special.textContent =
+            "🔥 6が大量発生！！";
+
+
+        special.classList.add(
+            "special-show"
+        );
+
+    }
+
+
+    return false;
+
+}
+
+
+/* =========================
+   全部振る
+========================= */
+
+function rollAllDice() {
+
+    startAudio();
+
+
+    const button =
+        document.getElementById(
+            "rollButton"
+        );
+
+
+    const selector =
+        document.getElementById(
+            "diceCount"
+        );
+
+
+    const totalDisplay =
+        document.getElementById(
+            "total"
+        );
+
+
+    button.disabled = true;
+
+    selector.disabled = true;
+
+
+    totalDisplay.textContent = "";
+
+
+    const special =
+        document.getElementById(
+            "special"
+        );
+
+
+    special.textContent = "";
+
+
+    const boxes =
+        document.querySelectorAll(
+            ".dice-box"
+        );
+
+
+    const count =
+        boxes.length;
+
+
+    let total = 0;
+
+    let results = [];
+
+
+    boxes.forEach(
+        (box,index) => {
+
+            const wrapper =
+                box.querySelector(
+                    ".dice-wrapper"
+                );
+
+
+            const dice =
+                box.querySelector(
+                    ".dice"
+                );
+
+
+            const shadow =
+                box.querySelector(
+                    ".shadow"
+                );
+
+
+            const resultDisplay =
+                box.querySelector(
+                    ".result"
+                );
+
+
+            const result =
+                Math.floor(
+                    Math.random() * 6
+                ) + 1;
+
+
+            results.push(result);
+
+            total += result;
+
+
+            stats[result]++;
+
+            updateStats();
+
+
+            resultDisplay.textContent =
+                "？";
+
+
+            wrapper.classList.remove(
+                "rolling-wrapper",
+                "landing"
+            );
+
+
+            dice.classList.remove(
+                "rolling"
+            );
+
+
+            shadow.classList.remove(
+                "shadow-rolling"
+            );
+
+
+            void dice.offsetWidth;
+
+
+            /* =====================
+               最終面
+               
+               2と5を修正済み
+            ===================== */
+
+            let finalX = 0;
+
+            let finalY = 0;
+
+
+            if (
+                result === 1
+            ) {
+
+                finalX = 0;
+                finalY = 0;
+
+            }
+
+
+            if (
+                result === 2
+            ) {
+
+                finalX = 90;
+                finalY = 0;
+
+            }
+
+
+            if (
+                result === 3
+            ) {
+
+                finalX = 0;
+                finalY = -90;
+
+            }
+
+
+            if (
+                result === 4
+            ) {
+
+                finalX = 0;
+                finalY = 90;
+
+            }
+
+
+            if (
+                result === 5
+            ) {
+
+                finalX = -90;
+                finalY = 0;
+
+            }
+
+
+            if (
+                result === 6
+            ) {
+
+                finalX = 0;
+                finalY = 180;
+
+            }
+
+
+            /* =====================
+               回転数
+            ===================== */
+
+            const spinX =
+                (
+                    4 +
+                    Math.floor(
+                        Math.random() * 3
+                    )
+                ) * 360;
+
+
+            const spinY =
+                (
+                    4 +
+                    Math.floor(
+                        Math.random() * 3
+                    )
+                ) * 360;
+
+
+            const directionX =
+                Math.random() < 0.5
+                ? 1
+                : -1;
+
+
+            const directionY =
+                Math.random() < 0.5
+                ? 1
+                : -1;
+
+
+            const startX =
+                Math.floor(
+                    Math.random() * 360
+                );
+
+
+            const startY =
+                Math.floor(
+                    Math.random() * 360
+                );
+
+
+            const startZ =
+                Math.floor(
+                    Math.random() * 360
+                );
+
+
+            dice.style.setProperty(
+                "--startX",
+                startX + "deg"
+            );
+
+
+            dice.style.setProperty(
+                "--startY",
+                startY + "deg"
+            );
+
+
+            dice.style.setProperty(
+                "--startZ",
+                startZ + "deg"
+            );
+
+
+            dice.style.setProperty(
+                "--endX",
+                (
+                    finalX +
+                    spinX *
+                    directionX
+                ) + "deg"
+            );
+
+
+            dice.style.setProperty(
+                "--endY",
+                (
+                    finalY +
+                    spinY *
+                    directionY
+                ) + "deg"
+            );
+
+
+            dice.style.setProperty(
+                "--endZ",
+                (
+                    360 *
+                    directionX
+                ) + "deg"
+            );
+
+
+            const delay =
+                index * 30;
+
+
+            setTimeout(() => {
+
+                wrapper.classList.add(
+                    "rolling-wrapper"
+                );
+
+
+                dice.classList.add(
+                    "rolling"
+                );
+
+
+                shadow.classList.add(
+                    "shadow-rolling"
+                );
+
+            },delay);
+
+
+            setTimeout(() => {
+
+                dice.classList.remove(
+                    "rolling"
+                );
+
+
+                dice.style.transform =
+                    `
+                    translateZ(0)
+                    rotateX(${finalX}deg)
+                    rotateY(${finalY}deg)
+                    rotateZ(0deg)
+                    `;
+
+
+                wrapper.classList.remove(
+                    "rolling-wrapper"
+                );
+
+
+                shadow.classList.remove(
+                    "shadow-rolling"
+                );
+
+
+                wrapper.classList.add(
+                    "landing"
+                );
+
+
+                resultDisplay.textContent =
+                    result;
+
+
+                setTimeout(() => {
+
+                    wrapper.classList.remove(
+                        "landing"
+                    );
+
+
+                    void dice.offsetWidth;
+
+                },350);
+
+            },1900 + delay);
+
+        }
+    );
+
+
+    /* =====================
+       転がり音
+    ===================== */
+
+    rollingSound(count);
+
+
+    /* =====================
+       結果処理
+    ===================== */
+
+    setTimeout(() => {
+
+        landingSound();
+
+
+        totalDisplay.textContent =
+            "合計： " +
+            total;
+
+
+        if (
+            total > bestTotal
+        ) {
+
+            bestTotal = total;
+
+            updateRecord();
+
+        }
+
+
+        historyData.unshift(
+            "🎲 " +
+            results.join("・") +
+            "　合計 " +
+            total
+        );
+
+
+        updateHistory();
+
+
+        const isJackpot =
+            specialEffect(
+                results
+            );
+
+
+        /* =====================
+           ゾロ目SE
+        ===================== */
+
+        if (isJackpot) {
+
+            jackpotSound(
+                results.length
+            );
+
+        }
+
+
+        /* =====================
+           画面揺れ
+        ===================== */
+
+        document.body.classList.remove(
+            "shake"
+        );
+
+
+        void document.body.offsetWidth;
+
+
+        document.body.classList.add(
+            "shake"
+        );
+
+
+    },1950 + count * 30);
+
+
+    /* =====================
+       ボタン復活
+    ===================== */
+
+    setTimeout(() => {
+
+        button.disabled = false;
+
+        selector.disabled = false;
+
+    },2350 + count * 30);
+
+}
+
+
+/* =========================
+   初期化
+========================= */
+
+createDice();
+
+updateStats();
+
+updateHistory();
+
+updateRecord();
+
+</script>
+
+</body>
+</html>
